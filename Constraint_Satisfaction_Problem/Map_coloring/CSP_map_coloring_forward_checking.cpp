@@ -2,74 +2,114 @@
 using namespace std;
 
 const int N=100;
-vector<int>adj[N];
-int vars,cons;
+int assign[N];
+int var, cons, domain;
+vector<int> adj[N];
+vector<set<int>> domains; // domain[i] = remaining possible colors for variable i
 
-bool FC(int u, vector<int>&assign, vector<vector<int>>&domains){
-    if(u==vars) return true;
+bool is_valid(int region, int color) {
+    for (auto u : adj[region]) {
+        if (assign[u] == color)
+            return false;
+    }
+    return true;
+}
 
-    for(int col:domains[u]){
-        // check if valid
-        bool ok=true;
-        for(int v:adj[u]){
-            if(assign[v]==col){ ok=false; break; }
-        }
-        if(!ok) continue;
+// Forward checking version of solve
+bool solve(int u) {
+    if (u == var) return true;
 
-        // assign u
-        assign[u]=col;
+    // Try each color still available for this variable
+    for (int color : domains[u]) {
+        if (is_valid(u, color)) {
+            assign[u] = color;
 
-        // make a copy of domains for forward propagation
-        vector<vector<int>> newDomains = domains;
+            // Save current domain state for restoration later
+            vector<set<int>> old_domains = domains;
 
-        // forward check: prune color col from neighbors domain
-        bool fail=false;
-        for(int v:adj[u]){
-            if(assign[v]==-1){
-                vector<int> nd;
-                for(int c : newDomains[v]){
-                    if(c!=col) nd.push_back(c);
-                }
-                if(nd.size()==0){ fail=true; break; }
-                newDomains[v]=nd;
+            // Forward checking: remove this color from neighbors' domains
+            for (auto v : adj[u]) {
+                if (assign[v] == -1)
+                    domains[v].erase(color);
             }
-        }
 
-        if(!fail){
-            if(FC(u+1,assign,newDomains)) return true;
-        }
+            // Check if any unassigned variable has no remaining color → fail early
+            bool valid = true;
+            for (int i = 0; i < var; i++) {
+                if (assign[i] == -1 && domains[i].empty()) {
+                    valid = false;
+                    break;
+                }
+            }
 
-        assign[u]=-1;
+            if (valid && solve(u + 1))
+                return true;
+
+            // Restore previous domain state on backtrack
+            domains = old_domains;
+            assign[u] = -1;
+        }
     }
     return false;
 }
 
-int32_t main(){
-    cout<<"Enter number of variables:\n";
-    cin>>vars;
-    cout<<"Enter number of constraints:\n";
-    cin>>cons;
+int32_t main() {
+    int t = 1;
+    // cin >> t;
+    while (t--) {
+        cout << "Enter number of regions: \n";
+        cin >> var;
 
-    cout<<"Enter constraints (A B means color of A != B):\n";
-    for(int i=0;i<cons;i++){
-        char x,y;
-        cin>>x>>y;
-        int u=x-'A', v=y-'A';
-        adj[u].push_back(v);
-        adj[v].push_back(u);
-    }
+        map<string, int> varMap;
+        map<int, string> rVarMap;
 
-    // domain initialization
-    vector<vector<int>> domains(vars, vector<int>{0,1,2});
-    vector<int> assign(vars,-1);
-
-    if(FC(0,assign,domains)){
-        cout<<"Solution:\n";
-        for(int i=0;i<vars;i++){
-            char color = (assign[i]==0?'R':assign[i]==1?'G':'B');
-            cout<<char('A'+i)<<" -> "<<color<<"\n";
+        cout << "Enter regions: \n";
+        for (int i = 0; i < var; i++) {
+            string s;
+            cin >> s;
+            varMap[s] = i;
+            rVarMap[i] = s;
         }
-    }else cout<<"No solution!\n";
 
-    return 0;
+        cout << "Enter number of constraints: \n";
+        cin >> cons;
+        for (int i = 0; i < cons; i++) {
+            string x, y;
+            cin >> x >> y;
+            int a = varMap[x];
+            int b = varMap[y];
+            adj[a].push_back(b);
+            adj[b].push_back(a);
+        }
+
+        cout << "Enter domain number: \n";
+        cin >> domain;
+        map<int, string> domainMap;
+        cout << "Enter domains: \n";
+        for (int i = 0; i < domain; i++) {
+            string s;
+            cin >> s;
+            domainMap[i] = s;
+        }
+
+        fill(assign, assign + var, -1);
+
+        // Initialize all variable domains with all possible colors
+        domains.assign(var, {});
+        for (int i = 0; i < var; i++) {
+            for (int j = 0; j < domain; j++)
+                domains[i].insert(j);
+        }
+
+        if (solve(0)) {
+            cout << "\nColor Assignment:\n";
+            for (int i = 0; i < var; i++) {
+                cout << rVarMap[i] << " -> " << domainMap[assign[i]] << '\n';
+            }
+        } else {
+            cout << "No solution exist\n";
+        }
+
+        for (int i = 0; i < var; i++) adj[i].clear();
+    }
 }

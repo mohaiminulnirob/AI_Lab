@@ -2,57 +2,74 @@
 using namespace std;
 
 const int N=100;
-vector<int>domain={0,1,2};
+int assign[N];
+int var,cons,domain;
 vector<int>adj[N];
-int assign[N],vars,cons;
 
-bool valid(int u,int col){
-    for(int v:adj[u]){
-        if(assign[v]==col) return false;
+bool is_valid(int region,int color){
+    for(auto u:adj[region]){
+        if(assign[u]==color)
+          return false;
     }
     return true;
 }
 
 bool solve(int u){
-    if(u==vars) return true;
-    for(int col:domain){
-        if(valid(u,col)){
-            assign[u]=col;
-            if(solve(u+1)) return true;
-            assign[u]=-1;
+    if(u==var) return true;
+    for(int i=0;i<domain;i++){
+        if(is_valid(u,i)){
+          assign[u]=i;
+        if(solve(u+1))
+          return true;
+        assign[u]=-1;
         }
     }
     return false;
 }
-
 int32_t main(){
-    cout<<"Enter number of variables (regions):\n";
-    cin>>vars;
-    cout<<"Enter number of constraints (edges between variables):\n";
-    cin>>cons;
-    cout<<"Enter constraints (A B if A and B are adjacent):\n";
-    for(int i=0;i<cons;i++){
-        char x,y;
-        cin>>x>>y;
-        int u=x-'A',v=y-'A';
-        adj[u].push_back(v);
-        adj[v].push_back(u);
-    }
-
-    fill(assign,assign+vars,-1);
-
-    if(solve(0)){
-        cout<<"Solution found:\n";
-        for(int i=0;i<vars;i++){
-            char color;
-            if(assign[i]==0) color='R';
-            else if(assign[i]==1) color='G';
-            else color='B';
-            cout<<char(i+'A')<<" -> "<<color<<'\n';
+    int t=1;
+    //cin>>t;
+    while(t--){
+        cout<<"Enter number of regions: \n";
+        cin>>var;
+        map<string,int>varMap;
+        map<int,string>rVarMap;
+        cout<<"Enter regions: \n";
+        for(int i=0;i<var;i++){
+            string s;
+            cin>>s;
+            varMap[s]=i;
+            rVarMap[i]=s;
         }
+        cout<<"Enter number of constraints: \n";
+        cin>>cons;
+        for(int i=0;i<cons;i++){
+            string x,y;
+            cin>>x>>y;
+            int a=varMap[x];
+            int b=varMap[y];
+            adj[a].push_back(b);
+            adj[b].push_back(a);
+        }
+        cout<<"Enter domain number: \n";
+        cin>>domain;
+        map<int,string>domainMap;
+        cout<<"Enter domains: \n";
+        for(int i=0;i<domain;i++){
+            string s;
+            cin>>s;
+            domainMap[i]=s;
+        }
+        fill(assign,assign+var,-1);
+        if(solve(0)){
+            for(int i=0;i<var;i++){
+                cout<<rVarMap[i]<<" "<<domainMap[assign[i]]<<'\n';
+            }
+        }
+        else{
+            cout<<"No solution exist"<<'\n';
+        }
+
     }
-    else{
-        cout<<"No solution exists.\n";
-    }
-    return 0;
+
 }
