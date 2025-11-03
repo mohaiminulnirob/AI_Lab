@@ -3,67 +3,56 @@ using namespace std;
 #define ll long long
 #define pb push_back
 
-// Target Goal
-vector<vector<int>> goal = {
-    {1,2,3},
-    {4,5,6},
-    {7,8,0}
-};
+int n;
 
-// calculate heuristic = number of misplaced tiles
-int heuristic(vector<vector<int>> &a){
+// Heuristic → number of attacking queen pairs
+int heuristic(vector<int> &state){
     int h = 0;
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            if(a[i][j]!=0 && a[i][j]!=goal[i][j]) h++;
+    for(int i=0;i<n;i++){
+        for(int j=i+1;j<n;j++){
+            if(state[i] == state[j]) h++; // same row
+            if(abs(state[i]-state[j]) == abs(i-j)) h++; // diagonal attack
         }
     }
     return h;
 }
 
-// get all possible next states
-vector<vector<vector<int>>> getSuccessors(vector<vector<int>> cur){
-    vector<vector<vector<int>>> v;
-    int x,y;
-    for(int i=0;i<3;i++)
-        for(int j=0;j<3;j++)
-            if(cur[i][j]==0) x=i,y=j;
-
-    int dx[4]={-1,1,0,0};
-    int dy[4]={0,0,-1,1};
-
-    for(int k=0;k<4;k++){
-        int nx=x+dx[k], ny=y+dy[k];
-        if(nx>=0 && nx<3 && ny>=0 && ny<3){
-            auto nxt = cur;
-            swap(nxt[x][y], nxt[nx][ny]);
-            v.push_back(nxt);
+// generate neighbors
+vector<vector<int>> getSuccessors(vector<int> &cur){
+    vector<vector<int>> suc;
+    for(int col=0;col<n;col++){
+        for(int row=0;row<n;row++){
+            if(row != cur[col]){
+                vector<int> nxt = cur;
+                nxt[col] = row;
+                suc.pb(nxt);
+            }
         }
     }
-
-    return v;
+    return suc;
 }
 
-int32_t main(){
-  ios_base::sync_with_stdio(0);cin.tie(0);
-  
+int32_t main()
+{
+  ios_base::sync_with_stdio(0); cin.tie(0);
+
   int t=1;
   cin>>t;
   while(t--)
   {
-      vector<vector<int>> cur(3, vector<int>(3));
-      for(int i=0;i<3;i++)
-          for(int j=0;j<3;j++)
-              cin>>cur[i][j];
-      
+      cin>>n;
+
+      vector<int> cur(n);
+      for(int i=0;i<n;i++) cin>>cur[i]; // initial state
+
       while(true){
-          int currentH = heuristic(cur);
-          auto succ = getSuccessors(cur);
+          int currH = heuristic(cur);
+          auto neighbors = getSuccessors(cur);
 
-          vector<vector<int>> best = cur;
-          int bestH = currentH;
+          vector<int> best = cur;
+          int bestH = currH;
 
-          for(auto &s: succ){
+          for(auto &s: neighbors){
               int h = heuristic(s);
               if(h < bestH){
                   bestH = h;
@@ -71,15 +60,14 @@ int32_t main(){
               }
           }
 
-          if(bestH >= currentH) break; // no better move -> local optimum
+          if(bestH >= currH) break; // stuck (local opt)
           cur = best;
       }
 
-      cout<<"Final reached state with heuristic = "<<heuristic(cur)<<"\n";
-      for(auto &row: cur){
-          for(auto &x: row) cout<<x<<" ";
-          cout<<"\n";
-      }
+      cout<<"Final heuristic: "<<heuristic(cur)<<"\n";
+      cout<<"State / queen rows : ";
+      for(int x:cur) cout<<x<<" ";
+      cout<<"\n";
   }
 
   return 0;
