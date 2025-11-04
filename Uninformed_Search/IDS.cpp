@@ -12,25 +12,23 @@ vector<int> traversal;
 bool found = false;
 
 // Depth-Limited Search (used by IDS)
-bool dls(int u, int target, int depth, int limit) {
+void dls(int u, int target, int depth, int limit) {
+    if (depth > limit || found) 
+        return;
     vis[u] = true;
     traversal.push_back(u);
 
     if (u == target) {
         found = true;
-        return true;
+        return;
     }
-
-    if (depth >= limit) return false;
 
     for (auto v : a[u]) {
         if (!vis[v]) {
             orig[v] = u;
-            if (dls(v, target, depth + 1, limit)) return true;
+            dls(v, target, depth + 1, limit);
         }
     }
-
-    return false;
 }
 
 int32_t main() {
@@ -47,15 +45,13 @@ int32_t main() {
         string x, y;
         cin >> x >> y;
 
-        // Map new string nodes to integers
         if (!id.count(x)) { id[x] = idCounter; rid[idCounter] = x; idCounter++; }
         if (!id.count(y)) { id[y] = idCounter; rid[idCounter] = y; idCounter++; }
 
         int u = id[x];
         int v = id[y];
         a[u].push_back(v);
-        // If graph is undirected, uncomment the next line:
-        // a[v].push_back(u);
+        a[v].push_back(u);
     }
 
     int start = id[init];
@@ -63,11 +59,12 @@ int32_t main() {
 
     for (int limit = 1; limit <= maxDepth; limit++) {
         fill(vis, vis + N, false);
+        fill(orig, orig + N, -1);
         traversal.clear();
-        orig[start] = -1;
         found = false;
 
-        if (dls(start, dest, 0, limit)) {
+        dls(start, dest, 0, limit);
+        if(found){
             cout << "Traversing Sequence (Depth Limit " << limit << "): ";
             for (int u : traversal)
                 cout << rid[u] << " ";

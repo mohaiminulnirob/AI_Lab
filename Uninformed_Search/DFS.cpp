@@ -3,7 +3,7 @@ using namespace std;
 
 const int N = 1e3 + 5;
 vector<int> a[N];
-int edges, orig[N];
+int edges, orig[N],level[N];
 bool vis[N], found = false;
 map<string, int> id;
 map<int, string> rid;
@@ -23,6 +23,7 @@ void dfs(int u, int target) {
 
     for (auto v : a[u]) {
         if (!vis[v]) {
+            level[v]=level[u]+1;
             orig[v] = u;
             dfs(v, target);
         }
@@ -56,13 +57,14 @@ int32_t main() {
         int u = id[x];
         int v = id[y];
         a[u].push_back(v);
-        // If the graph is undirected, uncomment the next line:
-        // a[v].push_back(u);
+        // If the graph is undirected, comment the next line:
+        a[v].push_back(u);
     }
 
     int start = id[init];
     int dest = id[target];
     orig[start] = -1;
+    level[start]=0;
 
     dfs(start, dest);
 
