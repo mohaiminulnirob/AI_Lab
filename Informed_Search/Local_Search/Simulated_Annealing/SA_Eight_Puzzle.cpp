@@ -67,7 +67,7 @@ int32_t main(){
             }else{
                 double prob = exp(-(nh-ch)/T);
                 double r = (double)rand()/RAND_MAX;
-                if(r < prob) cur = n                                                                                                                 ext; // ac cept worse with probability
+                if(r < prob) cur = next;                                                                                                              
             }
             T *= cooling;
 
